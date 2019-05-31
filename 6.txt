@@ -1,0 +1,317 @@
+#include<iostream.h>
+#include<fstream.h>
+#include<conio.h>
+#include<stdio.h>
+#include<iomanip.h>
+#include<stdlib.h>
+#include<string.h>
+#define max 10
+
+#define datafile "student6.txt"
+
+#define indexfile "index6.txt"
+#define sindexfile "sindex6.txt"
+fstream stdfile, indfile,sindfile;
+int i,indsize,sindsize;
+char buffer[80];
+class Student
+{
+	char dusn[15],name[20],age[5],branch[5],sem[5];
+	public:
+		void read();
+		void pack();
+		friend int search(char*);
+		void recDisp(int);
+		void remove(int);
+		void dataDisp();
+		void unpack();
+};
+class index
+{
+	public:
+		char iusn[15],addr[5];
+		void initial();
+		void write();
+}in,id[max];
+
+class sindex
+{
+	public:
+		char sname[20],susn[15];
+		void sinitial();
+		void swrite();
+}sin,sid[max];
+
+void index::initial()
+{
+	indfile.open(indexfile,ios::in);
+	if(!indfile)
+	{
+		indsize=0;
+		return;
+	}
+	for(indsize=0;;indsize++)
+	{
+		indfile.getline(id[indsize].iusn,15,'|');
+		indfile.getline(id[indsize].addr,5,'\n');
+		if(indfile.eof())
+			break;
+	}
+	indfile.close();
+}
+
+void sindex::sinitial()
+{
+	sindfile.open(sindexfile,ios::in);
+	if(!sindfile)
+	{
+		sindsize=0;
+		return;
+	}
+	for(sindsize=0;;sindsize++)
+	{
+		sindfile.getline(sid[sindsize].sname,20,'|');
+		sindfile.getline(sid[sindsize].susn,15,'\n');
+		if(sindfile.eof())
+			break;
+	}
+	sindfile.close();
+}
+
+void opener(fstream &sfile,char* fn,int mode)
+{
+	sfile.open(fn,mode);
+	if(!sfile)
+	{
+		cout<<"Unable to open the file\n";
+		exit(1);
+	}
+}
+void index::write()
+{
+	opener(indfile,indexfile,ios::out);
+	for(i=0;i<indsize;i++)
+		indfile<<id[i].iusn<<"|"<<id[i].addr<<"\n";
+	indfile.close();
+}
+void sindex::swrite()
+{
+	opener(sindfile,sindexfile,ios::out);
+	for(i=0;i<sindsize;i++)
+		sindfile<<sid[i].sname<<"|"<<sid[i].susn<<"\n";
+	sindfile.close();
+}
+
+void Student::read()
+{
+	int k;
+	cout<<"Enter the usn no.\n";
+	gets(dusn);
+	if(search(dusn)>=0)
+	{
+		cout<<"usn is already present,we can't add to index file\n";
+		return;
+	}
+	for(i=indsize;i>0;i--)
+	{
+		if(strcmp(dusn,id[i-1].iusn)<0)
+			id[i]=id[i-1];
+		else
+			break;
+	}
+	opener(stdfile,datafile,ios::app);
+	cout<<"Enter the Name\n";
+	gets(name);
+	cout<<"Enter the age\n";
+	gets(age);
+	cout<<"Enter the branch\n";
+	gets(branch);
+	cout<<"Enter the semester\n";
+	gets(sem);
+	pack();
+	stdfile.seekg(0,ios::end);
+	k=stdfile.tellg();
+	stdfile<<buffer<<endl;
+	strcpy(id[i].iusn,dusn);
+	itoa(k,id[i].addr,10);
+	indsize++;
+	for(i=sindsize;i>0;i--)
+	{
+		if(strcmp(name,sid[i-1].sname)<0)
+			sid[i]=sid[i-1];
+		else if((strcmp(name,sid[i-1].sname)==0) && (strcmp(dusn,sid[i-1].susn)< 0))
+			sid[i]=sid[i-1];
+		else
+			break;
+	}
+	strcpy(sid[i].sname,name);
+	strcpy(sid[i].susn,dusn);
+	sindsize++;
+
+}
+void Student::pack()
+{
+	strcpy(buffer,dusn); strcat(buffer,"|");
+	strcat(buffer,name); strcat(buffer,"|");
+	strcat(buffer,age); strcat(buffer,"|");
+	strcat(buffer,branch); strcat(buffer,"|");
+	strcat(buffer,sem); strcat(buffer,"|");
+}
+int search(char* fusn)
+{
+	int low=0,high=indsize-1;
+	int mid;
+	while(low<=high)
+	{
+		mid=(low+high)/2;
+		if(strcmp(fusn,id[mid].iusn)==0)
+			return mid;
+		else if(strcmp(fusn,id[mid].iusn)>0)
+			low=mid+1;
+		else
+			high=mid-1;
+	}
+	return -1;
+}
+int sec_search()
+{
+	int j,count=0,start=-1,pos=-1;
+	char skey[20],rusn[20];
+	cout<<"\nEnter the name to search(secondary key)\n";
+	gets(skey);
+	cout<<"The searched record deatils are:"<<endl;
+	for(j=0;j<sindsize;j++)
+		if(strcmp(skey,sid[j].sname)==0)
+		{
+			cout<<sid[j].susn<<"\t\t"<<sid[j].sname<<endl;
+			count++;
+			if(count==1)
+				start=j;
+		}
+		if(count>1)
+		{
+			cout<<"Enter any one usn above listed:";
+			cin>>rusn;
+			for(j=start;start<j+count;start++)
+			if(strcmp(sid[start].susn,rusn)==0)
+				{
+					pos=start;
+					return pos;
+				}
+		   }
+		   else
+			return start;
+	return pos;
+}
+void Student::recDisp(int pos)
+{
+	opener(stdfile,datafile,ios::in);
+	stdfile.seekg(atoi(id[pos].addr),ios::beg);
+	cout<<"The searched record details are:"<<endl;
+	cout<<setiosflags(ios::left);
+	cout<<endl<<setw(16)<<"USN"<<setw(16)<<"Name"<<setw(16)<<"Age"<<setw(16)<<"Branch"<<setw(16)<<"Sem"<<endl;
+	unpack();
+}
+void Student::remove(int pos)
+{
+	opener(stdfile,datafile,ios::in|ios::out);
+	stdfile.seekg(atoi(id[pos].addr),ios::beg);
+	stdfile.put('$');
+	for(i=pos;i<indsize;i++)
+		id[i]=id[i+1];
+	indsize--;
+}
+void Student::dataDisp()
+{
+	cout<<setiosflags(ios::left);
+	cout<<setw(16)<<"USN"<<setw(16)<<"Name"<<setw(16)<<"Age" \
+	<<setw(16)<<"Branch"<<setw(16)<<"Sem"<<endl;
+	while(1)
+	{
+		unpack();
+		if(stdfile.eof())
+			break;
+	}
+	cout<<endl<<"The index file details are:"<<endl;
+	cout<<setw(10)<<"usn"<<setw(10)<<"address"<<endl;
+	for(i=0;i<indsize;i++)
+		cout<<endl<<setw(10)<<id[i].iusn<<setw(10)<<setw(10)<<id[i].addr<<endl;
+
+		cout<<endl<<"The Secondary index file details are:"<<endl;
+	cout<<setw(20)<<"name"<<setw(15)<<"usn"<<endl;
+	for(i=0;i<sindsize;i++)
+		cout<<endl<<setw(20)<<sid[i].sname<<setw(15)<<sid[i].susn<<endl;
+}
+void Student::unpack()
+{
+	stdfile.getline(buffer,100,'\n');
+	i=0;
+	if(buffer[i]!='$')
+	{
+		cout<<"\n";
+		while(buffer[i]!='\0')
+		{
+			if(buffer[i]=='|')
+				cout<<"\t\t";
+			else
+				cout<<buffer[i];
+			i++;
+		}
+	}
+}
+void main()
+{
+	 int ch,pos,spos,flag;
+	 char susn[15];
+	 Student S;
+	 in.initial();
+	 sin.sinitial();
+	 clrscr();
+	 for(;;)
+	 {
+		cout<<endl<<"1.Read\n2.Display\n3.Search\n4.Delete\n5.exit\n";
+		cin>>ch;
+		switch(ch)
+		{
+			case 1: cout<<"Enter student details\n";
+				S.read();
+				in.write();
+				sin.swrite();
+				break;
+			case 2: opener(stdfile,datafile,ios::in);
+				cout<<endl<<"Student Details and ";
+				cout<<endl<<"Index file and secondary index file details are:\n";
+				S.dataDisp();
+				break;
+			case 3: cout<<"To search based on secondary key\n";
+				spos=sec_search();
+				if(spos==-1)
+					cout<<"Record Not found\n";
+				else
+				{
+					pos=search(sid[spos].susn);
+					S.recDisp(pos);
+				}
+				break;
+			case 4: spos=sec_search();
+				if(spos==-1)
+					cout<<"no data record found\n";
+				else
+				{
+					cout<<"record is deleted";
+					pos=search(sid[spos].susn);
+					S.remove(pos);
+					for(i=spos;i<sindsize;i++)
+					{
+						sid[i]=sid[i+1];
+					}
+					sindsize--;
+					in.write();
+					sin.swrite();
+				}
+				break;
+			default: exit(0);
+		}
+		stdfile.close();
+	 }
+}

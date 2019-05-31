@@ -1,0 +1,65 @@
+#include<stdio.h>
+#include<conio.h>
+#include<fstream.h>
+#include<string.h>
+#include<stdlib.h>
+#include<iostream.h>
+#define K 8
+void opener(fstream &file,char *fn,int mode)
+{
+	file.open(fn,mode);
+	if(!file)
+	{
+		cout<<"unable to open the file"<<endl;
+		getch();
+		exit(1);
+	}
+}
+
+void main()
+{
+	fstream list[8],outfile;
+	char name[8][20]={"name0110.txt","name1110.txt","name2110.txt","name3110.txt","name4110.txt","name5110.txt","name6110.txt","name7110.txt"};
+	char item[8][20],min[20]="";
+	int i,count=0;
+	for(i=0;i<K;i++)
+		opener(list[i],name[i],ios::in);
+	opener(outfile,"merge110.txt",ios::out);
+	for(i=0;i<K;i++)
+	{
+		list[i].getline(item[i],20,'\n');
+		if(list[i].eof())
+			count++;
+	}
+	cout<<"Names after merging using K-Merge algorithm are:\n";
+	while(count<K)
+	{
+		strcpy(min,"");
+		for(i=0;i<K;i++)
+			if(strcmp(item[i],"*")!=0)
+			{
+				strcpy(min,item[i]);
+					break;
+			}
+		count=0;
+		for(i=0;i<K;i++)
+		{
+			if(strcmp(item[i],"*")==0)
+				count++;
+			else if(strcmp(item[i],min)<0)
+				strcpy(min,item[i]);
+		}
+		if(count==8)
+		{
+			break;
+		}
+		outfile<<min<<endl;
+		cout<<min<<endl;
+		for(i=0;i<K;i++)
+			if(strcmp(item[i],min)==0)
+				list[i].getline(item[i],20,'\n');
+	}
+	for(i=0;i<8;i++)
+		list[i].close();
+	getch();
+}
